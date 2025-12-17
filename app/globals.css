@@ -47,11 +47,14 @@
 }
 
 :root {
-  --radius: 0.625rem;
-  
+  --radius: 0.5rem;
+  /* rounded-lg (8px) */
+
   /* Beqst Brand Palette */
-  --background: #F5F7FA;
+  --background: #FFFFFF;
+  /* Clean White */
   --foreground: #2D3748;
+  /* Dark Grey text */
 
   --card: #FFFFFF;
   --card-foreground: #2D3748;
@@ -59,45 +62,49 @@
   --popover: #FFFFFF;
   --popover-foreground: #2D3748;
 
-  --primary: #2C5F8D; /* Calming Blue */
+  --primary: #3182CE;
+  /* Brighter, Modern Blue */
   --primary-foreground: #FFFFFF;
 
-  --secondary: #5A9FBF; /* Light Blue */
-  --secondary-foreground: #FFFFFF;
+  --secondary: #F0F4F8;
+  /* Light Grey/Blue for secondary buttons */
+  --secondary-foreground: #3182CE;
+  /* Blue text for secondary buttons */
 
   --muted: #F1F5F9;
   --muted-foreground: #64748B;
 
-  --accent: #5A9FBF;
-  --accent-foreground: #FFFFFF;
+  --accent: #EBF8FF;
+  /* Very light blue accent */
+  --accent-foreground: #2C5282;
 
-  --destructive: #C45563; /* Muted Red */
+  --destructive: #E53E3E;
   --destructive-foreground: #FFFFFF;
 
   --border: #E2E8F0;
   --input: #E2E8F0;
-  --ring: #2C5F8D;
+  --ring: #3182CE;
 
-  --chart-1: #2C5F8D;
-  --chart-2: #5A9FBF;
-  --chart-3: #4A7C59;
-  --chart-4: #D4A574;
-  --chart-5: #C45563;
+  --chart-1: #3182CE;
+  --chart-2: #63B3ED;
+  --chart-3: #48BB78;
+  --chart-4: #ED8936;
+  --chart-5: #E53E3E;
 
   /* Custom Status Colors */
-  --success: #4A7C59;
-  --warning: #D4A574;
-  --error: #C45563;
+  --success: #48BB78;
+  --warning: #ED8936;
+  --error: #E53E3E;
 
   /* Sidebar defaults */
   --sidebar: #FFFFFF;
   --sidebar-foreground: #2D3748;
-  --sidebar-primary: #2C5F8D;
+  --sidebar-primary: #3182CE;
   --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #F1F5F9;
-  --sidebar-accent-foreground: #2C5F8D;
+  --sidebar-accent: #F7FAFC;
+  --sidebar-accent-foreground: #3182CE;
   --sidebar-border: #E2E8F0;
-  --sidebar-ring: #2C5F8D;
+  --sidebar-ring: #3182CE;
 }
 
 .dark {
@@ -145,10 +152,17 @@
   --sidebar-ring: #5A9FBF;
 }
 
+@layer utilities {
+  .container {
+    @apply mx-auto px-4 md:px-8 max-w-7xl;
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }

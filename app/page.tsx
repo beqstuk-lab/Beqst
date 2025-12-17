@@ -39,95 +39,135 @@ export default function Home() {
       </header>
 
       <main className="flex-1">
-        <section className="space-y-6 pb-8 pt-6 md:pb-12 md:pt-10 lg:py-32">
-          <div className="container flex max-w-[64rem] flex-col items-center gap-4 text-center">
-            <Link
-              href="https://twitter.com"
-              className="rounded-2xl bg-muted px-4 py-1.5 text-sm font-medium"
-              target="_blank"
-            >
-              Follow along on Twitter
-            </Link>
-            <h1 className="font-heading text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-foreground">
-              Your Digital Legacy, <span className="text-primary">Secured.</span>
-            </h1>
-            <p className="max-w-[42rem] leading-normal text-muted-foreground sm:text-xl sm:leading-8">
-              Beqst is the comprehensive digital estate planning platform for the UK. Organize your assets, create your will, and protect your family's future in one secure location.
-            </p>
-            <div className="space-x-4">
-              <Link href="/signup">
-                <Button size="lg" className="h-11 px-8 bg-primary hover:bg-primary/90 text-primary-foreground">
-                  Start for Free <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
+        <section className="space-y-6 pb-12 pt-16 md:pb-24 md:pt-32 lg:py-32">
+          <div className="container grid gap-8 md:grid-cols-2 lg:grid-cols-[1.2fr_1fr] lg:gap-16 items-center">
+            <div className="flex flex-col items-start gap-10 text-left">
+              <Link
+                href="https://twitter.com"
+                className="rounded-full bg-primary/10 px-6 py-2 text-sm font-medium text-primary hover:bg-primary/20 transition-colors"
+                target="_blank"
+              >
+                Follow along on Twitter
               </Link>
-              <Link href="/demo">
-                <Button variant="outline" size="lg" className="h-11 px-8">
-                  View Demo
-                </Button>
-              </Link>
+              <h1 className="font-heading text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-foreground text-left leading-[1.1]">
+                Your Digital Legacy, <br className="hidden md:block" /> <span className="text-primary">Secured.</span>
+              </h1>
+              <p className="max-w-[38rem] leading-relaxed text-muted-foreground sm:text-lg sm:leading-8 text-left text-lg">
+                Beqst is the comprehensive digital estate planning platform for the UK. Organize your assets, create your will, and protect your family's future in one secure location.
+              </p>
+
+              <div className="flex flex-col gap-6 w-full sm:w-auto">
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <Link href="/signup">
+                    <Button size="lg" className="h-14 w-full sm:w-auto px-8 bg-primary hover:bg-primary/90 text-primary-foreground text-lg shadow-xl shadow-primary/25 rounded-xl font-semibold">
+                      Secure My Legacy <ArrowRight className="ml-2 h-5 w-5" />
+                    </Button>
+                  </Link>
+                  <Link href="/demo">
+                    <Button variant="outline" size="lg" className="h-14 w-full sm:w-auto px-8 border-2 border-primary/20 text-primary hover:bg-primary/5 text-lg rounded-xl font-semibold cursor-pointer">
+                      Explore Solutions
+                    </Button>
+                  </Link>
+                </div>
+
+                {/* Trust Signals */}
+                <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-foreground/70 font-medium">
+                  <div className="flex items-center gap-1.5">
+                    <Shield className="h-4 w-4 text-green-600 fill-green-600/20" /> Bank-Level Security
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="h-4 w-4 rounded-full border-2 border-current flex items-center justify-center text-[10px]">L</div> Set Up in Minutes
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Users className="h-4 w-4 text-primary" /> UK-Focused
+                  </div>
+                </div>
+              </div>
+
+            </div>
+            {/* Right Column: Key Visual / Dashboard Mockup */}
+            <div className="flex items-center justify-center md:justify-end relative">
+              <div className="relative aspect-[4/3] w-full max-w-[500px] lg:max-w-[600px] rounded-2xl overflow-hidden shadow-2xl shadow-primary/10 border border-primary/10">
+                <img
+                  src="/hero-human.png"
+                  alt="Planning your digital legacy"
+                  className="w-full h-full object-cover"
+                />
+                {/* Floating 'Powered by AI' Badge */}
+                <div className="absolute top-6 right-6 bg-white/90 backdrop-blur-md border border-white/20 px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2 duration-1000 delay-500">
+                  <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
+                  <span className="text-xs font-semibold text-primary">AI Guidance</span>
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
-        <section id="features" className="container space-y-6 bg-slate-50 py-8 dark:bg-transparent md:py-12 lg:py-24 rounded-3xl">
+        <section id="features" className="container space-y-12 py-8 md:py-12 lg:py-24">
           <div className="mx-auto flex max-w-[58rem] flex-col items-center space-y-4 text-center">
-            <h2 className="font-heading text-3xl leading-[1.1] sm:text-3xl md:text-6xl font-bold">
+            <h2 className="font-heading text-3xl leading-[1.1] sm:text-3xl md:text-5xl font-bold">
               Everything you need
             </h2>
             <p className="max-w-[85%] leading-normal text-muted-foreground sm:text-lg sm:leading-7">
               Manage your entire estate from a single, secure dashboard.
             </p>
           </div>
-          <div className="mx-auto grid justify-center gap-4 sm:grid-cols-2 md:max-w-[64rem] md:grid-cols-3">
-            <Card>
+          <div className="mx-auto grid justify-center gap-8 sm:grid-cols-2 md:max-w-[64rem] md:grid-cols-3">
+            <Card className="shadow-md hover:shadow-xl transition-all duration-300 border-none bg-white">
               <CardHeader>
-                <Shield className="h-10 w-10 mb-2 text-primary" />
-                <CardTitle>Bank-Grade Security</CardTitle>
-                <CardDescription>
+                <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                  <Shield className="h-6 w-6 text-primary" />
+                </div>
+                <CardTitle className="text-xl">Bank-Grade Security</CardTitle>
+                <CardDescription className="text-base">
                   Your data is encrypted with AES-256 and stored securely in the UK.
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                We prioritize your privacy and security above all else.
+                <p className="text-sm text-muted-foreground">We prioritize your privacy and security above all else.</p>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="shadow-md hover:shadow-xl transition-all duration-300 border-none bg-white">
               <CardHeader>
-                <FileText className="h-10 w-10 mb-2 text-primary" />
-                <CardTitle>Smart Will Creation</CardTitle>
-                <CardDescription>
+                <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                  <FileText className="h-6 w-6 text-primary" />
+                </div>
+                <CardTitle className="text-xl">Smart Will Creation</CardTitle>
+                <CardDescription className="text-base">
                   Create a legally valid will in minutes with our guided wizard.
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                Compliant with the Wills Act 1837 and updated for modern assets.
+                <p className="text-sm text-muted-foreground">Compliant with the Wills Act 1837 and updated for modern assets.</p>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="shadow-md hover:shadow-xl transition-all duration-300 border-none bg-white">
               <CardHeader>
-                <Users className="h-10 w-10 mb-2 text-primary" />
-                <CardTitle>Executor Tools</CardTitle>
-                <CardDescription>
+                <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                  <Users className="h-6 w-6 text-primary" />
+                </div>
+                <CardTitle className="text-xl">Executor Tools</CardTitle>
+                <CardDescription className="text-base">
                   Give your executors the roadmap they need to manage your estate.
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                Reduce probate time and stress for your loved ones.
+                <p className="text-sm text-muted-foreground">Reduce probate time and stress for your loved ones.</p>
               </CardContent>
             </Card>
           </div>
         </section>
 
-        <section id="open-source" className="container py-8 md:py-12 lg:py-24">
-          <div className="mx-auto flex max-w-[58rem] flex-col items-center justify-center gap-4 text-center">
-            <h2 className="font-heading text-3xl leading-[1.1] sm:text-3xl md:text-6xl font-bold">
+        <section id="cta" className="bg-primary/5 py-16 md:py-24">
+          <div className="container flex max-w-[58rem] flex-col items-center justify-center gap-6 text-center">
+            <h2 className="font-heading text-3xl leading-[1.1] sm:text-3xl md:text-5xl font-bold text-foreground">
               Ready to take control?
             </h2>
-            <p className="max-w-[85%] leading-normal text-muted-foreground sm:text-lg sm:leading-7">
+            <p className="max-w-[85%] leading-normal text-muted-foreground sm:text-lg sm:leading-7 mb-4">
               Beqst is free to start. Organize up to 5 assets and create your digital vault today.
             </p>
             <Link href="/signup">
-              <Button size="lg" className="h-11 px-8 bg-primary hover:bg-primary/90 text-primary-foreground">
+              <Button size="lg" className="h-12 px-8 bg-primary hover:bg-primary/90 text-primary-foreground text-lg shadow-xl shadow-primary/20 rounded-lg">
                 Create Your Free Account
               </Button>
             </Link>
