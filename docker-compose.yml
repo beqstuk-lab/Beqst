@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  web:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - .:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://beqst_user:beqst_password@db:5432/beqst_db
+      - NODE_ENV=development
+      - AUTH_SECRET=supersecretkey123
+    command: sh -c "npm install && npm run dev"
+    depends_on:
+      - db
+    networks:
+      - beqst-network
+
+  db:
+    image: postgres:15-alpine
+    container_name: beqst-db
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=beqst_user
+      - POSTGRES_PASSWORD=beqst_password
+      - POSTGRES_DB=beqst_db
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - beqst-network
+
+  redis:
+    image: redis:alpine
+    container_name: beqst-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - beqst-network
+
+volumes:
+  db_data:
+
+
+networks:
+  beqst-network:
+    driver: bridge

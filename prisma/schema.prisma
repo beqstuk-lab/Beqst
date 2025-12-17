@@ -1,0 +1,193 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(uuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  accounts      Account[]
+  sessions      Session[]
+  
+  // Custom fields
+  firstName     String?
+  lastName      String?
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  estates       Estate[]
+}
+
+model Account {
+  id                 String  @id @default(uuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?  @db.Text
+  access_token       String?  @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?  @db.Text
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+enum EstateStatus {
+  ACTIVE
+  DEATH_INITIATED
+  DEATH_VERIFIED
+  PROBATE_IN_PROGRESS
+  CLOSED
+}
+
+model Estate {
+  id                String        @id @default(uuid())
+  ownerId           String
+  owner             User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  
+  name              String?
+  dateOfBirth       DateTime?
+  
+  status            EstateStatus  @default(ACTIVE)
+  
+  assets            Asset[]
+  beneficiaries     Beneficiary[]
+  executors         Executor[]
+  
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+}
+
+enum AssetType {
+  BANK_ACCOUNT
+  PROPERTY
+  INVESTMENT
+  PENSION
+  VEHICLE
+  DIGITAL
+  CRYPTOCURRENCY
+  OTHER
+}
+
+model Asset {
+  id          String      @id @default(uuid())
+  estateId    String
+  estate      Estate      @relation(fields: [estateId], references: [id], onDelete: Cascade)
+  
+  name        String
+  type        AssetType   @default(OTHER)
+  value       Decimal?    @db.Decimal(12, 2)
+  
+  // Type-specific metadata stored as JSON
+  metadata    Json?
+  
+  allocations Allocation[]
+  
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+enum BeneficiaryType {
+  RESIDUARY
+  SPECIFIC
+  CONTINGENT
+}
+
+model Beneficiary {
+  id            String          @id @default(uuid())
+  estateId      String
+  estate        Estate          @relation(fields: [estateId], references: [id], onDelete: Cascade)
+  
+  name          String
+  relationship  String
+  email         String?
+  phone         String?
+  
+  type          BeneficiaryType @default(RESIDUARY)
+  
+  allocations   Allocation[]
+  
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+}
+
+enum ExecutorRole {
+  PRIMARY
+  CO_EXECUTOR
+  ALTERNATE
+}
+
+enum ExecutorStatus {
+  NOT_INVITED
+  INVITED
+  ACCEPTED
+  DECLINED
+}
+
+model Executor {
+  id            String         @id @default(uuid())
+  estateId      String
+  estate        Estate         @relation(fields: [estateId], references: [id], onDelete: Cascade)
+  
+  name          String
+  email         String?
+  phone         String?
+  
+  role          ExecutorRole   @default(PRIMARY)
+  status        ExecutorStatus @default(NOT_INVITED)
+  
+  instructions  String?        @db.Text
+  
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+// Asset allocation to beneficiaries (must sum to 100% per asset)
+model Allocation {
+  id            String      @id @default(uuid())
+  assetId       String
+  asset         Asset       @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  beneficiaryId String
+  beneficiary   Beneficiary @relation(fields: [beneficiaryId], references: [id], onDelete: Cascade)
+  
+  percentage    Decimal     @db.Decimal(5, 2) // 0.00 to 100.00
+  
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  
+  @@unique([assetId, beneficiaryId])
+}
