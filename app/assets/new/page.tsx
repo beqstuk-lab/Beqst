@@ -1,55 +1,108 @@
-'use client';
+'use client'
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { Building2, Landmark, TrendingUp, Car, Smartphone, Bitcoin, Package, ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { useState } from "react"
+import { Landmark, Building2, TrendingUp, Shield, Smartphone, Package, ArrowLeft } from "lucide-react"
+import { UpgradeModal } from "@/components/upgrade-modal"
+import { DashboardHeader } from "@/components/dashboard-header"
 
-const assetTypes = [
-    { id: "BANK_ACCOUNT", label: "Bank Account", icon: Landmark, description: "Current, savings, or ISA accounts" },
-    { id: "PROPERTY", label: "Property", icon: Building2, description: "Houses, flats, land" },
-    { id: "INVESTMENT", label: "Investment", icon: TrendingUp, description: "Stocks, bonds, funds" },
+// Asset category configuration
+const assetCategories = [
+    { id: "CASH_SAVINGS", label: "Cash & Savings", icon: Landmark, description: "Current accounts, savings, ISAs" },
+    { id: "PROPERTY", label: "Property", icon: Building2, description: "UK or overseas property" },
+    { id: "INVESTMENTS", label: "Investments", icon: TrendingUp, description: "Stocks, bonds, funds" },
     { id: "PENSION", label: "Pension", icon: TrendingUp, description: "Workplace or private pensions" },
-    { id: "VEHICLE", label: "Vehicle", icon: Car, description: "Cars, motorcycles, boats" },
-    { id: "DIGITAL", label: "Digital Asset", icon: Smartphone, description: "Online accounts, domains" },
-    { id: "CRYPTOCURRENCY", label: "Cryptocurrency", icon: Bitcoin, description: "Bitcoin, Ethereum, etc." },
-    { id: "OTHER", label: "Other", icon: Package, description: "Jewelry, art, collectibles" },
-];
+    { id: "INSURANCE", label: "Insurance", icon: Shield, description: "Life insurance, critical illness" },
+    { id: "DIGITAL", label: "Digital Assets", icon: Smartphone, description: "Crypto, online accounts" },
+    { id: "OTHER", label: "Other", icon: Package, description: "Vehicles, valuables, collectibles" },
+]
 
-type AssetType = typeof assetTypes[number]["id"];
+// Sub-types by category
+const subTypesByCategory: Record<string, { id: string; label: string }[]> = {
+    CASH_SAVINGS: [
+        { id: "CURRENT_ACCOUNT", label: "Current Account" },
+        { id: "SAVINGS_ACCOUNT", label: "Savings Account" },
+        { id: "ISA", label: "ISA (Individual Savings Account)" },
+        { id: "GIA", label: "GIA (General Investment Account)" },
+        { id: "PREMIUM_BONDS", label: "Premium Bonds" },
+    ],
+    PROPERTY: [
+        { id: "UK_PROPERTY", label: "UK Property" },
+        { id: "OVERSEAS_PROPERTY", label: "Overseas Property" },
+    ],
+    INVESTMENTS: [
+        { id: "STOCKS", label: "Stocks & Shares" },
+        { id: "BONDS", label: "Bonds" },
+        { id: "FUNDS", label: "Investment Funds" },
+        { id: "ETFS", label: "ETFs" },
+    ],
+    PENSION: [
+        { id: "WORKPLACE_PENSION", label: "Workplace Pension" },
+        { id: "PRIVATE_PENSION", label: "Private Pension" },
+        { id: "SIPP", label: "SIPP (Self-Invested Personal Pension)" },
+    ],
+    INSURANCE: [
+        { id: "LIFE_INSURANCE", label: "Life Insurance" },
+        { id: "CRITICAL_ILLNESS", label: "Critical Illness Cover" },
+    ],
+    DIGITAL: [
+        { id: "CRYPTOCURRENCY", label: "Cryptocurrency" },
+        { id: "ONLINE_ACCOUNTS", label: "Online Accounts" },
+        { id: "DOMAIN", label: "Domain Names" },
+    ],
+    OTHER: [
+        { id: "VEHICLE", label: "Vehicle" },
+        { id: "VALUABLES", label: "Valuables (Jewelry, Art)" },
+        { id: "OTHER", label: "Other" },
+    ],
+}
+
+// Common providers by category
+const providersByCategory: Record<string, string[]> = {
+    CASH_SAVINGS: ["Barclays", "HSBC", "Lloyds", "NatWest", "Santander", "Nationwide", "Monzo", "Starling", "Other"],
+    INVESTMENTS: ["Vanguard", "Hargreaves Lansdown", "AJ Bell", "Fidelity", "Interactive Investor", "Other"],
+    PENSION: ["Aviva", "Legal & General", "Scottish Widows", "Standard Life", "PensionBee", "Other"],
+    INSURANCE: ["Aviva", "Legal & General", "AIG", "Vitality", "Zurich", "Other"],
+}
+
+type AssetCategory = keyof typeof subTypesByCategory
 
 export default function NewAssetPage() {
-    const router = useRouter();
-    const [step, setStep] = useState(1);
-    const [selectedType, setSelectedType] = useState<AssetType | null>(null);
+    const router = useRouter()
+    const [step, setStep] = useState(1)
+    const [selectedCategory, setSelectedCategory] = useState<AssetCategory | null>(null)
     const [formData, setFormData] = useState({
         name: "",
+        subType: "",
         value: "",
-        // Type-specific fields
-        institution: "",
+        provider: "",
+        providerOther: "",
         accountNumber: "",
         address: "",
-        provider: "",
-    });
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    })
+    const [isSubmitting, setIsSubmitting] = useState(false)
+    const [error, setError] = useState<string | null>(null)
+    const [showUpgradeModal, setShowUpgradeModal] = useState(false)
 
-    const handleTypeSelect = (type: AssetType) => {
-        setSelectedType(type);
-        setStep(2);
-    };
+    const handleCategorySelect = (category: AssetCategory) => {
+        setSelectedCategory(category)
+        setFormData(prev => ({ ...prev, subType: subTypesByCategory[category]?.[0]?.id || "" }))
+        setStep(2)
+    }
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
-    };
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value } = e.target
+        setFormData(prev => ({ ...prev, [name]: value }))
+    }
 
     const handleSubmit = async () => {
-        if (!selectedType) return;
+        if (!selectedCategory) return
 
-        setIsSubmitting(true);
-        setError(null);
+        setIsSubmitting(true)
+        setError(null)
 
         try {
             const res = await fetch("/api/assets", {
@@ -57,109 +110,41 @@ export default function NewAssetPage() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     name: formData.name,
-                    type: selectedType,
+                    category: selectedCategory,
+                    subType: formData.subType,
                     value: formData.value ? parseFloat(formData.value) : undefined,
                     metadata: {
-                        institution: formData.institution,
+                        provider: formData.provider === "Other" ? formData.providerOther : formData.provider,
                         accountNumber: formData.accountNumber,
                         address: formData.address,
-                        provider: formData.provider,
                     },
                 }),
-            });
+            })
+
+            const data = await res.json()
 
             if (!res.ok) {
-                throw new Error("Failed to create asset");
+                if (data.code === 'LIMIT_REACHED') {
+                    setShowUpgradeModal(true)
+                    return
+                }
+                throw new Error(data.error || "Failed to create asset")
             }
 
-            router.push("/assets");
-        } catch {
-            setError("Failed to create asset. Please try again.");
+            router.push("/assets")
+        } catch (err: any) {
+            setError(err.message || "Failed to create asset. Please try again.")
         } finally {
-            setIsSubmitting(false);
+            setIsSubmitting(false)
         }
-    };
+    }
 
-    const renderTypeSpecificFields = () => {
-        switch (selectedType) {
-            case "BANK_ACCOUNT":
-                return (
-                    <>
-                        <div className="grid gap-2">
-                            <label htmlFor="institution" className="text-sm font-medium">Institution</label>
-                            <input
-                                id="institution"
-                                name="institution"
-                                type="text"
-                                placeholder="e.g., Barclays, HSBC"
-                                value={formData.institution}
-                                onChange={handleInputChange}
-                                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                            />
-                        </div>
-                        <div className="grid gap-2">
-                            <label htmlFor="accountNumber" className="text-sm font-medium">Account Number (last 4 digits)</label>
-                            <input
-                                id="accountNumber"
-                                name="accountNumber"
-                                type="text"
-                                placeholder="****1234"
-                                value={formData.accountNumber}
-                                onChange={handleInputChange}
-                                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                            />
-                        </div>
-                    </>
-                );
-            case "PROPERTY":
-                return (
-                    <div className="grid gap-2">
-                        <label htmlFor="address" className="text-sm font-medium">Property Address</label>
-                        <input
-                            id="address"
-                            name="address"
-                            type="text"
-                            placeholder="123 Main Street, London"
-                            value={formData.address}
-                            onChange={handleInputChange}
-                            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                        />
-                    </div>
-                );
-            case "INVESTMENT":
-            case "PENSION":
-                return (
-                    <div className="grid gap-2">
-                        <label htmlFor="provider" className="text-sm font-medium">Provider</label>
-                        <input
-                            id="provider"
-                            name="provider"
-                            type="text"
-                            placeholder="e.g., Vanguard, Hargreaves Lansdown"
-                            value={formData.provider}
-                            onChange={handleInputChange}
-                            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                        />
-                    </div>
-                );
-            default:
-                return null;
-        }
-    };
+    const providers = selectedCategory ? providersByCategory[selectedCategory] : null
+    const subTypes = selectedCategory ? subTypesByCategory[selectedCategory] : []
 
     return (
         <div className="flex min-h-screen flex-col bg-muted/20">
-            <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-6">
-                <Link className="flex items-center gap-2 font-bold text-lg text-primary" href="/dashboard">
-                    Beqst
-                </Link>
-                <nav className="flex gap-6 text-sm font-medium">
-                    <Link className="text-muted-foreground transition-colors hover:text-foreground" href="/dashboard">Overview</Link>
-                    <Link className="text-foreground" href="/assets">Assets</Link>
-                    <Link className="text-muted-foreground transition-colors hover:text-foreground" href="/beneficiaries">Beneficiaries</Link>
-                    <Link className="text-muted-foreground transition-colors hover:text-foreground" href="/executors">Executors</Link>
-                </nav>
-            </header>
+            <DashboardHeader />
 
             <main className="flex-1 p-6 md:p-8">
                 <div className="max-w-2xl mx-auto">
@@ -174,22 +159,22 @@ export default function NewAssetPage() {
                         <Card>
                             <CardHeader>
                                 <CardTitle>Add New Asset</CardTitle>
-                                <CardDescription>What type of asset would you like to add?</CardDescription>
+                                <CardDescription>Select the category of asset you want to add</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <div className="grid gap-3 sm:grid-cols-2">
-                                    {assetTypes.map((type) => (
+                                    {assetCategories.map((cat) => (
                                         <button
-                                            key={type.id}
-                                            onClick={() => handleTypeSelect(type.id as AssetType)}
+                                            key={cat.id}
+                                            onClick={() => handleCategorySelect(cat.id as AssetCategory)}
                                             className="flex items-start gap-4 rounded-lg border p-4 text-left hover:bg-muted/50 transition-colors"
                                         >
                                             <div className="rounded-lg bg-primary/10 p-2 text-primary">
-                                                <type.icon className="h-5 w-5" />
+                                                <cat.icon className="h-5 w-5" />
                                             </div>
                                             <div>
-                                                <div className="font-medium">{type.label}</div>
-                                                <div className="text-sm text-muted-foreground">{type.description}</div>
+                                                <div className="font-medium">{cat.label}</div>
+                                                <div className="text-sm text-muted-foreground">{cat.description}</div>
                                             </div>
                                         </button>
                                     ))}
@@ -198,12 +183,12 @@ export default function NewAssetPage() {
                         </Card>
                     )}
 
-                    {step === 2 && selectedType && (
+                    {step === 2 && selectedCategory && (
                         <Card>
                             <CardHeader>
                                 <CardTitle>Asset Details</CardTitle>
                                 <CardDescription>
-                                    Tell us about this {assetTypes.find(t => t.id === selectedType)?.label.toLowerCase()}
+                                    Tell us about this {assetCategories.find(c => c.id === selectedCategory)?.label.toLowerCase()}
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-4">
@@ -213,13 +198,30 @@ export default function NewAssetPage() {
                                     </div>
                                 )}
 
+                                {/* Sub-type Dropdown */}
+                                <div className="grid gap-2">
+                                    <label htmlFor="subType" className="text-sm font-medium">Account Type *</label>
+                                    <select
+                                        id="subType"
+                                        name="subType"
+                                        value={formData.subType}
+                                        onChange={handleInputChange}
+                                        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                                    >
+                                        {subTypes.map(st => (
+                                            <option key={st.id} value={st.id}>{st.label}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                {/* Asset Name */}
                                 <div className="grid gap-2">
                                     <label htmlFor="name" className="text-sm font-medium">Asset Name *</label>
                                     <input
                                         id="name"
                                         name="name"
                                         type="text"
-                                        placeholder="e.g., Main Savings Account"
+                                        placeholder="e.g., Barclays Current Account"
                                         value={formData.name}
                                         onChange={handleInputChange}
                                         required
@@ -227,6 +229,78 @@ export default function NewAssetPage() {
                                     />
                                 </div>
 
+                                {/* Provider Dropdown (if available) */}
+                                {providers && (
+                                    <>
+                                        <div className="grid gap-2">
+                                            <label htmlFor="provider" className="text-sm font-medium">Provider</label>
+                                            <select
+                                                id="provider"
+                                                name="provider"
+                                                value={formData.provider}
+                                                onChange={handleInputChange}
+                                                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                                            >
+                                                <option value="">Select provider...</option>
+                                                {providers.map(p => (
+                                                    <option key={p} value={p}>{p}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        {formData.provider === "Other" && (
+                                            <div className="grid gap-2">
+                                                <label htmlFor="providerOther" className="text-sm font-medium">Provider Name</label>
+                                                <input
+                                                    id="providerOther"
+                                                    name="providerOther"
+                                                    type="text"
+                                                    placeholder="Enter provider name"
+                                                    value={formData.providerOther}
+                                                    onChange={handleInputChange}
+                                                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                                />
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+
+                                {/* Account Number (for bank accounts) */}
+                                {selectedCategory === "CASH_SAVINGS" && (
+                                    <div className="grid gap-2">
+                                        <label htmlFor="accountNumber" className="text-sm font-medium">
+                                            Account Number (last 4 digits)
+                                        </label>
+                                        <input
+                                            id="accountNumber"
+                                            name="accountNumber"
+                                            type="text"
+                                            placeholder="****1234"
+                                            maxLength={4}
+                                            value={formData.accountNumber}
+                                            onChange={handleInputChange}
+                                            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                        />
+                                        <p className="text-xs text-muted-foreground">We only store the last 4 digits for security</p>
+                                    </div>
+                                )}
+
+                                {/* Address (for property) */}
+                                {selectedCategory === "PROPERTY" && (
+                                    <div className="grid gap-2">
+                                        <label htmlFor="address" className="text-sm font-medium">Property Address</label>
+                                        <input
+                                            id="address"
+                                            name="address"
+                                            type="text"
+                                            placeholder="123 Main Street, London"
+                                            value={formData.address}
+                                            onChange={handleInputChange}
+                                            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                        />
+                                    </div>
+                                )}
+
+                                {/* Estimated Value */}
                                 <div className="grid gap-2">
                                     <label htmlFor="value" className="text-sm font-medium">Estimated Value (£)</label>
                                     <input
@@ -239,8 +313,6 @@ export default function NewAssetPage() {
                                         className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                                     />
                                 </div>
-
-                                {renderTypeSpecificFields()}
 
                                 <div className="flex gap-3 pt-4">
                                     <Button variant="outline" onClick={() => setStep(1)}>
@@ -255,6 +327,11 @@ export default function NewAssetPage() {
                     )}
                 </div>
             </main>
+            <UpgradeModal
+                open={showUpgradeModal}
+                onOpenChange={setShowUpgradeModal}
+                resourceName="Assets"
+            />
         </div>
-    );
+    )
 }

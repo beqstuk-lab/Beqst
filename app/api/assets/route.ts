@@ -5,9 +5,18 @@ import { z } from "zod"
 
 const assetSchema = z.object({
     name: z.string().min(1, "Name is required"),
-    type: z.enum(["BANK_ACCOUNT", "PROPERTY", "INVESTMENT", "PENSION", "VEHICLE", "DIGITAL", "CRYPTOCURRENCY", "OTHER"]),
+    category: z.enum(["CASH_SAVINGS", "PROPERTY", "INVESTMENTS", "PENSION", "INSURANCE", "DIGITAL", "OTHER"]),
+    subType: z.enum([
+        "CURRENT_ACCOUNT", "SAVINGS_ACCOUNT", "ISA", "GIA", "PREMIUM_BONDS",
+        "UK_PROPERTY", "OVERSEAS_PROPERTY",
+        "STOCKS", "BONDS", "FUNDS", "ETFS",
+        "WORKPLACE_PENSION", "PRIVATE_PENSION", "SIPP",
+        "LIFE_INSURANCE", "CRITICAL_ILLNESS",
+        "CRYPTOCURRENCY", "ONLINE_ACCOUNTS", "DOMAIN",
+        "VEHICLE", "VALUABLES", "OTHER"
+    ]),
     value: z.number().optional(),
-    metadata: z.record(z.any()).optional()
+    metadata: z.any().optional()
 })
 
 // GET /api/assets - Get all assets for user's estate
@@ -59,6 +68,16 @@ export async function POST(req: Request) {
         const body = await req.json()
         const validatedData = assetSchema.parse(body)
 
+        // Check Limits
+        const { checkLimit } = await import("@/lib/limits")
+        const limitCheck = await checkLimit('ASSETS')
+        if (!limitCheck.allowed) {
+            return NextResponse.json(
+                { error: limitCheck.error, code: limitCheck.code },
+                { status: 403 }
+            )
+        }
+
         const user = await prisma.user.findUnique({
             where: { email: session.user.email },
             include: { estates: true }
@@ -84,7 +103,8 @@ export async function POST(req: Request) {
             data: {
                 estateId,
                 name: validatedData.name,
-                type: validatedData.type,
+                category: validatedData.category,
+                subType: validatedData.subType,
                 value: validatedData.value,
                 metadata: validatedData.metadata
             }

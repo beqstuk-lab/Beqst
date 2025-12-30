@@ -54,6 +54,16 @@ export async function POST(req: Request) {
         const body = await req.json()
         const validatedData = executorSchema.parse(body)
 
+        // Check Limits
+        const { checkLimit } = await import("@/lib/limits")
+        const limitCheck = await checkLimit('EXECUTORS')
+        if (!limitCheck.allowed) {
+            return NextResponse.json(
+                { error: limitCheck.error, code: limitCheck.code },
+                { status: 403 }
+            )
+        }
+
         const user = await prisma.user.findUnique({
             where: { email: session.user.email },
             include: { estates: true }

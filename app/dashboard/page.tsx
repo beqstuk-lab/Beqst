@@ -1,97 +1,90 @@
-'use client';
+'use client'
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import Link from "next/link";
-import { BarChart3, FileText, Users, Shield, Plus, ArrowRight, Clock, Sparkles } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import Link from "next/link"
+import { BarChart3, FileText, Users, Shield, Plus, ArrowRight, Clock, Sparkles, TrendingDown, Wallet } from "lucide-react"
+import { useEffect, useState } from "react"
+import { DashboardHeader } from "@/components/dashboard-header"
 
 type DashboardStats = {
-    assets: number;
-    assetValue: number;
-    beneficiaries: number;
-    executors: number;
-};
+    assets: number
+    assetValue: number
+    liabilities: number
+    liabilityValue: number
+    documents: number
+    beneficiaries: number
+    executors: number
+}
 
 export default function DashboardPage() {
     const [stats, setStats] = useState<DashboardStats>({
         assets: 0,
         assetValue: 0,
+        liabilities: 0,
+        liabilityValue: 0,
+        documents: 0,
         beneficiaries: 0,
         executors: 0,
-    });
-    const [loading, setLoading] = useState(true);
-    const [trialDaysLeft] = useState(14);
-    const [tier, setTier] = useState<string>("Essential");
+    })
+    const [loading, setLoading] = useState(true)
+    const [trialDaysLeft] = useState(14)
 
     useEffect(() => {
-        // Load assessment data
-        const assessmentData = localStorage.getItem("beqst_assessment");
-        if (assessmentData) {
-            const { tier: savedTier } = JSON.parse(assessmentData);
-            setTier(savedTier);
-        }
-
-        // Fetch stats
+        // Fetch all stats
         Promise.all([
-            fetch("/api/assets").then(r => r.json()),
-            fetch("/api/beneficiaries").then(r => r.json()),
-            fetch("/api/executors").then(r => r.json()),
-        ]).then(([assets, beneficiaries, executors]) => {
+            fetch("/api/assets").then(r => r.json()).catch(() => []),
+            fetch("/api/beneficiaries").then(r => r.json()).catch(() => []),
+            fetch("/api/executors").then(r => r.json()).catch(() => []),
+            fetch("/api/liabilities").then(r => r.json()).catch(() => []),
+            // Documents count - could add API later
+            Promise.resolve([]),
+        ]).then(([assets, beneficiaries, executors, liabilities, documents]) => {
             const assetValue = Array.isArray(assets)
                 ? assets.reduce((sum: number, a: { value: number | null }) => sum + (Number(a.value) || 0), 0)
-                : 0;
+                : 0
+            const liabilityValue = Array.isArray(liabilities)
+                ? liabilities.reduce((sum: number, l: { amount: number | null }) => sum + (Number(l.amount) || 0), 0)
+                : 0
             setStats({
                 assets: Array.isArray(assets) ? assets.length : 0,
                 assetValue,
+                liabilities: Array.isArray(liabilities) ? liabilities.length : 0,
+                liabilityValue,
+                documents: Array.isArray(documents) ? documents.length : 0,
                 beneficiaries: Array.isArray(beneficiaries) ? beneficiaries.length : 0,
                 executors: Array.isArray(executors) ? executors.length : 0,
-            });
-            setLoading(false);
-        }).catch(() => setLoading(false));
-    }, []);
+            })
+            setLoading(false)
+        }).catch(() => setLoading(false))
+    }, [])
 
+    const netWorth = stats.assetValue - stats.liabilityValue
     const completionPercentage = Math.min(
         Math.round(((stats.assets > 0 ? 30 : 0) + (stats.beneficiaries > 0 ? 35 : 0) + (stats.executors > 0 ? 35 : 0))),
         100
-    );
+    )
 
     const formatCurrency = (value: number) => {
         return new Intl.NumberFormat("en-GB", {
             style: "currency",
             currency: "GBP",
             maximumFractionDigits: 0,
-        }).format(value);
-    };
+        }).format(value)
+    }
 
     const getNextAction = () => {
-        if (stats.assets === 0) return { label: "Add your first asset", href: "/assets/new", icon: Plus };
-        if (stats.beneficiaries === 0) return { label: "Add a beneficiary", href: "/beneficiaries/new", icon: Users };
-        if (stats.executors === 0) return { label: "Designate an executor", href: "/executors/new", icon: Shield };
-        return { label: "View your estate", href: "/assets", icon: ArrowRight };
-    };
+        if (stats.assets === 0) return { label: "Add your first asset", href: "/assets/new", icon: Plus }
+        if (stats.beneficiaries === 0) return { label: "Add a beneficiary", href: "/beneficiaries/new", icon: Users }
+        if (stats.executors === 0) return { label: "Designate an executor", href: "/executors/new", icon: Shield }
+        return { label: "View your estate", href: "/assets", icon: ArrowRight }
+    }
 
-    const nextAction = getNextAction();
+    const nextAction = getNextAction()
 
     return (
         <div className="flex min-h-screen flex-col bg-muted/20">
-            <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-6">
-                <Link className="flex items-center gap-2 font-bold text-lg text-primary" href="/dashboard">
-                    Beqst
-                </Link>
-                <nav className="flex gap-6 text-sm font-medium">
-                    <Link className="text-foreground" href="/dashboard">Overview</Link>
-                    <Link className="text-muted-foreground transition-colors hover:text-foreground" href="/assets">Assets</Link>
-                    <Link className="text-muted-foreground transition-colors hover:text-foreground" href="/beneficiaries">Beneficiaries</Link>
-                    <Link className="text-muted-foreground transition-colors hover:text-foreground" href="/executors">Executors</Link>
-                </nav>
-                <div className="ml-auto flex items-center gap-4">
-                    <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">{tier} Plan</span>
-                    <Button variant="ghost" size="sm" asChild>
-                        <Link href="/">Sign Out</Link>
-                    </Button>
-                </div>
-            </header>
+            <DashboardHeader />
 
             {/* Trial Banner */}
             <div className="bg-gradient-to-r from-primary/10 to-primary/5 border-b px-6 py-3">
@@ -102,15 +95,46 @@ export default function DashboardPage() {
                             <strong>{trialDaysLeft} days left</strong> in your free trial
                         </span>
                     </div>
-                    <Button size="sm" variant="default">
-                        Upgrade Now
+                    <Button size="sm" variant="default" asChild>
+                        <Link href="/pricing">Upgrade Now</Link>
                     </Button>
                 </div>
             </div>
 
             <main className="flex-1 p-6 md:p-8 max-w-6xl mx-auto w-full">
+                {/* Net Worth Hero */}
+                <Card className="mb-8 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border-primary/20">
+                    <CardContent className="pt-6">
+                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                            <div>
+                                <p className="text-sm font-medium text-muted-foreground mb-1">Estimated Net Worth</p>
+                                <p className={`text-4xl font-bold tracking-tight ${netWorth >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                    {formatCurrency(netWorth)}
+                                </p>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                    {formatCurrency(stats.assetValue)} assets − {formatCurrency(stats.liabilityValue)} liabilities
+                                </p>
+                            </div>
+                            <div className="flex gap-3">
+                                <Button asChild variant="outline">
+                                    <Link href="/assets/new">
+                                        <Plus className="mr-2 h-4 w-4" />
+                                        Add Asset
+                                    </Link>
+                                </Button>
+                                <Button asChild variant="outline">
+                                    <Link href="/liabilities">
+                                        <TrendingDown className="mr-2 h-4 w-4" />
+                                        Add Liability
+                                    </Link>
+                                </Button>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
                 {/* Progress Section */}
-                <Card className="mb-8 bg-gradient-to-r from-primary/5 to-transparent">
+                <Card className="mb-8">
                     <CardHeader className="pb-2">
                         <div className="flex items-center justify-between">
                             <div>
@@ -157,8 +181,18 @@ export default function DashboardPage() {
                             <BarChart3 className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{formatCurrency(stats.assetValue)}</div>
+                            <div className="text-2xl font-bold text-green-600">{formatCurrency(stats.assetValue)}</div>
                             <p className="text-xs text-muted-foreground">{stats.assets} asset{stats.assets !== 1 ? "s" : ""} tracked</p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Total Liabilities</CardTitle>
+                            <TrendingDown className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold text-red-600">{formatCurrency(stats.liabilityValue)}</div>
+                            <p className="text-xs text-muted-foreground">{stats.liabilities} liabilit{stats.liabilities !== 1 ? "ies" : "y"}</p>
                         </CardContent>
                     </Card>
                     <Card>
@@ -167,18 +201,8 @@ export default function DashboardPage() {
                             <FileText className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">0</div>
+                            <div className="text-2xl font-bold">{stats.documents}</div>
                             <p className="text-xs text-muted-foreground">in your secure vault</p>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Executors</CardTitle>
-                            <Shield className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{stats.executors}</div>
-                            <p className="text-xs text-muted-foreground">designated</p>
                         </CardContent>
                     </Card>
                     <Card>
@@ -267,6 +291,27 @@ export default function DashboardPage() {
                                 </Card>
                             )}
 
+                            {/* Upload Documents Card */}
+                            <Card>
+                                <CardHeader>
+                                    <div className="flex items-center gap-2">
+                                        <FileText className="h-5 w-5 text-muted-foreground" />
+                                        <CardTitle className="text-lg">Upload Documents</CardTitle>
+                                    </div>
+                                    <CardDescription>
+                                        Securely store wills, deeds, and other important documents.
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <Button asChild variant="outline" className="w-full">
+                                        <Link href="/documents">
+                                            <Plus className="mr-2 h-4 w-4" />
+                                            Go to Documents
+                                        </Link>
+                                    </Button>
+                                </CardContent>
+                            </Card>
+
                             {completionPercentage >= 100 && (
                                 <Card className="border-green-500/50 bg-green-50">
                                     <CardHeader>
@@ -287,5 +332,5 @@ export default function DashboardPage() {
                 </div>
             </main>
         </div>
-    );
+    )
 }

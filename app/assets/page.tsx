@@ -3,8 +3,9 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
-import { Plus, Building2, Landmark, TrendingUp, Car, Smartphone, Bitcoin, Package } from "lucide-react";
+import { Plus, Building2, Landmark, TrendingUp, Car, Smartphone, Bitcoin, Package, Eye, EyeOff } from "lucide-react";
 import { useEffect, useState } from "react";
+import { DashboardHeader } from "@/components/dashboard-header";
 
 type Asset = {
     id: string;
@@ -39,6 +40,7 @@ const assetTypeLabels: Record<string, string> = {
 export default function AssetsPage() {
     const [assets, setAssets] = useState<Asset[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isRevealed, setIsRevealed] = useState(false);
 
     useEffect(() => {
         fetch("/api/assets")
@@ -52,6 +54,8 @@ export default function AssetsPage() {
 
     const formatCurrency = (value: number | null) => {
         if (value === null) return "—";
+        if (!isRevealed) return "••••••";
+
         return new Intl.NumberFormat("en-GB", {
             style: "currency",
             currency: "GBP",
@@ -60,35 +64,35 @@ export default function AssetsPage() {
 
     return (
         <div className="flex min-h-screen flex-col bg-muted/20">
-            <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-6">
-                <Link className="flex items-center gap-2 font-bold text-lg text-primary" href="/dashboard">
-                    Beqst
-                </Link>
-                <nav className="flex gap-6 text-sm font-medium">
-                    <Link className="text-muted-foreground transition-colors hover:text-foreground" href="/dashboard">Overview</Link>
-                    <Link className="text-foreground" href="/assets">Assets</Link>
-                    <Link className="text-muted-foreground transition-colors hover:text-foreground" href="/beneficiaries">Beneficiaries</Link>
-                    <Link className="text-muted-foreground transition-colors hover:text-foreground" href="/executors">Executors</Link>
-                </nav>
-                <div className="ml-auto">
-                    <Button variant="ghost" size="sm" asChild>
-                        <Link href="/">Sign Out</Link>
-                    </Button>
-                </div>
-            </header>
+            <DashboardHeader />
 
             <main className="flex-1 p-6 md:p-8">
-                <div className="flex items-center justify-between mb-6">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                     <div>
                         <h1 className="text-2xl font-bold">Assets</h1>
                         <p className="text-muted-foreground">Manage your estate assets</p>
                     </div>
-                    <Button asChild>
-                        <Link href="/assets/new">
-                            <Plus className="mr-2 h-4 w-4" />
-                            Add Asset
-                        </Link>
-                    </Button>
+                    <div className="flex gap-2">
+                        <Button variant="outline" onClick={() => setIsRevealed(!isRevealed)}>
+                            {isRevealed ? (
+                                <>
+                                    <EyeOff className="mr-2 h-4 w-4" />
+                                    Hide Values
+                                </>
+                            ) : (
+                                <>
+                                    <Eye className="mr-2 h-4 w-4" />
+                                    Show Values
+                                </>
+                            )}
+                        </Button>
+                        <Button asChild>
+                            <Link href="/assets/new">
+                                <Plus className="mr-2 h-4 w-4" />
+                                Add Asset
+                            </Link>
+                        </Button>
+                    </div>
                 </div>
 
                 {loading ? (
@@ -126,12 +130,17 @@ export default function AssetsPage() {
                                     </div>
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-2xl font-bold">{formatCurrency(asset.value)}</div>
+                                    <div className="text-2xl font-bold flex items-center gap-2">
+                                        {formatCurrency(asset.value)}
+                                    </div>
                                     {asset.allocations.length > 0 && (
                                         <p className="text-sm text-muted-foreground mt-2">
                                             Allocated to {asset.allocations.length} beneficiar{asset.allocations.length === 1 ? "y" : "ies"}
                                         </p>
                                     )}
+                                    <Button variant="outline" size="sm" className="w-full mt-4" asChild>
+                                        <Link href={`/assets/${asset.id}`}>Edit Details</Link>
+                                    </Button>
                                 </CardContent>
                             </Card>
                         ))}
