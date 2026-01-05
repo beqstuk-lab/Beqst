@@ -15,6 +15,7 @@ type DashboardStats = {
     documents: number
     beneficiaries: number
     executors: number
+    beneficiarySplit: Record<string, number>
 }
 
 export default function DashboardPage() {
@@ -26,6 +27,7 @@ export default function DashboardPage() {
         documents: 0,
         beneficiaries: 0,
         executors: 0,
+        beneficiarySplit: {},
     })
     const [loading, setLoading] = useState(true)
     const [trialDaysLeft] = useState(14)
@@ -46,6 +48,24 @@ export default function DashboardPage() {
             const liabilityValue = Array.isArray(liabilities)
                 ? liabilities.reduce((sum: number, l: { amount: number | null }) => sum + (Number(l.amount) || 0), 0)
                 : 0
+
+            // Calculate beneficiary split
+            const beneficiarySplit: Record<string, number> = {}
+            if (Array.isArray(assets)) {
+                assets.forEach((asset: any) => {
+                    const value = Number(asset.value) || 0
+                    if (value > 0 && asset.allocations && Array.isArray(asset.allocations)) {
+                        asset.allocations.forEach((allocation: any) => {
+                            if (allocation.beneficiary && allocation.percentage) {
+                                const splitValue = value * (allocation.percentage / 100)
+                                const name = allocation.beneficiary.name
+                                beneficiarySplit[name] = (beneficiarySplit[name] || 0) + splitValue
+                            }
+                        })
+                    }
+                })
+            }
+
             setStats({
                 assets: Array.isArray(assets) ? assets.length : 0,
                 assetValue,
@@ -54,6 +74,7 @@ export default function DashboardPage() {
                 documents: Array.isArray(documents) ? documents.length : 0,
                 beneficiaries: Array.isArray(beneficiaries) ? beneficiaries.length : 0,
                 executors: Array.isArray(executors) ? executors.length : 0,
+                beneficiarySplit,
             })
             setLoading(false)
         }).catch(() => setLoading(false))
@@ -217,6 +238,42 @@ export default function DashboardPage() {
                     </Card>
                 </div>
 
+                {/* Beneficiary Split View */}
+                {Object.keys(stats.beneficiarySplit).length > 0 && (
+                    <Card className="mb-8">
+                        <CardHeader>
+                            <CardTitle>Inheritance Distribution</CardTitle>
+                            <CardDescription>Estimated distribution based on current asset values and allocations</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            {Object.entries(stats.beneficiarySplit).map(([name, value]) => {
+                                const percentage = stats.assetValue > 0 ? (value / stats.assetValue) * 100 : 0
+                                return (
+                                    <div key={name} className="space-y-1">
+                                        <div className="flex items-center justify-between text-sm">
+                                            <span className="font-medium">{name}</span>
+                                            <span className="text-muted-foreground">
+                                                {formatCurrency(value)} ({percentage.toFixed(1)}%)
+                                            </span>
+                                        </div>
+                                        <div className="h-2 bg-muted rounded-full overflow-hidden">
+                                            <div
+                                                className="h-full bg-primary"
+                                                style={{ width: `${percentage}%` }}
+                                            />
+                                        </div>
+                                    </div>
+                                )
+                            })}
+                            {Object.keys(stats.beneficiarySplit).length < stats.beneficiaries && (
+                                <p className="text-xs text-muted-foreground mt-4">
+                                    * Only beneficiaries with assigned allocations from valued assets are shown.
+                                </p>
+                            )}
+                        </CardContent>
+                    </Card>
+                )}
+
                 {/* Quick Actions */}
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {loading ? (
@@ -285,6 +342,28 @@ export default function DashboardPage() {
                                             <Link href="/executors/new">
                                                 <Plus className="mr-2 h-4 w-4" />
                                                 Add Executor
+                                            </Link>
+                                        </Button>
+                                    </CardContent>
+                                </Card>
+                            )}
+
+                            {/* Unallocated Assets Warning */}
+                            {stats.assetValue > 0 && stats.beneficiaries > 0 && (Object.values(stats.beneficiarySplit).reduce((a, b) => a + b, 0) < stats.assetValue) && (
+                                <Card className="border-orange-500/50 bg-orange-50">
+                                    <CardHeader>
+                                        <div className="flex items-center gap-2">
+                                            <Sparkles className="h-5 w-5 text-orange-600" />
+                                            <CardTitle className="text-lg text-orange-700">Allocate Assets</CardTitle>
+                                        </div>
+                                        <CardDescription className="text-orange-600/90">
+                                            You have assets that aren&apos;t fully allocated to beneficiaries yet.
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <Button asChild variant="secondary" className="w-full">
+                                            <Link href="/assets">
+                                                Review Assets
                                             </Link>
                                         </Button>
                                     </CardContent>

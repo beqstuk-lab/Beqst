@@ -18,7 +18,14 @@ const importSchema = z.object({
         relationship: z.string(),
         type: z.enum(["RESIDUARY", "SPECIFIC", "CONTINGENT"]),
         selected: z.boolean().optional()
-    }))
+    })),
+    liabilities: z.array(z.object({
+        name: z.string(),
+        type: z.enum(["MORTGAGE", "LOAN", "CREDIT_CARD", "STUDENT_LOAN", "TAX", "OTHER"]),
+        amount: z.number().nullable().optional(),
+        creditor: z.string().nullable().optional(),
+        selected: z.boolean().optional()
+    })).optional()
 })
 
 // 1. Simulate Analysis (Read-only)
@@ -41,11 +48,17 @@ export async function parseWill(formData: FormData) {
         { id: "2", name: "James McPherson Jr", relationship: "Child", type: "RESIDUARY", selected: true }
     ];
 
+    const detectedLiabilities = [
+        { id: "1", name: "Mortgage (Lloyds)", type: "MORTGAGE", amount: 125000.00, creditor: "Lloyds Bank", selected: true },
+        { id: "2", name: "Personal Loan", type: "LOAN", amount: 5000.00, creditor: "Zopa", selected: true }
+    ];
+
     return {
         success: true,
         data: {
             assets: detectedAssets,
-            beneficiaries: detectedBeneficiaries
+            beneficiaries: detectedBeneficiaries,
+            liabilities: detectedLiabilities
         }
     }
 }
@@ -80,8 +93,9 @@ export async function importEstateData(data: any) {
 
         const assets = data.assets || []
         const beneficiaries = data.beneficiaries || []
+        const liabilities = data.liabilities || []
 
-        let stats = { assets: 0, beneficiaries: 0 }
+        let stats = { assets: 0, beneficiaries: 0, liabilities: 0 }
 
         for (const asset of assets) {
             // Mapping UI type string back to Enum if needed, 
@@ -107,6 +121,19 @@ export async function importEstateData(data: any) {
                 }
             })
             stats.beneficiaries++
+        }
+
+        for (const liab of liabilities) {
+            await prisma.liability.create({
+                data: {
+                    estateId,
+                    name: liab.name,
+                    type: liab.type,
+                    amount: liab.amount,
+                    creditor: liab.creditor
+                }
+            })
+            stats.liabilities++
         }
 
         if (data.saveToDocuments) {
@@ -135,6 +162,7 @@ export async function importEstateData(data: any) {
 
         revalidatePath("/dashboard")
         revalidatePath("/documents")
+        revalidatePath("/liabilities")
         return { success: true, stats }
     } catch (e) {
         console.error(e)

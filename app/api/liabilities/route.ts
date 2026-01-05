@@ -25,7 +25,9 @@ export async function GET() {
             include: {
                 estates: {
                     include: {
-                        liabilities: true
+                        liabilities: {
+                            orderBy: { createdAt: 'desc' }
+                        }
                     }
                 }
             }
